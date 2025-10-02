@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Match } from "./Match";
-import { Inscription } from "./Inscription";
+import type { Match } from "./Match";
+import type { Inscription } from "./Inscription";
 
 @Entity("tournaments")
 export class Tournament {
@@ -27,9 +27,9 @@ export class Tournament {
   status!: "upcoming" | "ongoing" | "finished" | "cancelled";
 
   // Relaciones
-  @OneToMany(() => Match, match => match.tournament)
+  @OneToMany(() => require("./Match").Match, (match: Match) => match.tournament)
   matches!: Match[];
 
-  @OneToMany(() => Inscription, inscription => inscription.tournament)
+  @OneToMany(() => require("./Inscription").Inscription, (inscription: Inscription) => inscription.tournament)
   inscriptions!: Inscription[];
 }

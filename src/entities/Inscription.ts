@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
-import { User } from "./User";
-import { Tournament } from "./Tournament";
+import type { User } from "./User";
+import type { Tournament } from "./Tournament";
 
 @Entity("inscriptions")
 export class Inscription {
@@ -17,11 +17,11 @@ export class Inscription {
   registrationDate!: Date;
 
   // Relaciones
-  @ManyToOne(() => User, user => user.inscriptions)
+  @ManyToOne(() => require("./User").User, (user: User) => user.inscriptions)
   @JoinColumn({ name: "userId" })
   user!: User;
 
-  @ManyToOne(() => Tournament, tournament => tournament.inscriptions)
+  @ManyToOne(() => require("./Tournament").Tournament, (tournament: Tournament) => tournament.inscriptions)
   @JoinColumn({ name: "tournamentId" })
   tournament!: Tournament;
 }

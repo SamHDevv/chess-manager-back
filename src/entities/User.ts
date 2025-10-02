@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Inscription } from "./Inscription";
+import type { Inscription } from "./Inscription";
 
 @Entity("users")
 export class User {
@@ -23,6 +23,6 @@ export class User {
   role!: "admin" | "player";
 
   // Relaciones
-  @OneToMany(() => Inscription, inscription => inscription.user)
+  @OneToMany(() => require("./Inscription").Inscription, (inscription: Inscription) => inscription.user)
   inscriptions!: Inscription[];
 }

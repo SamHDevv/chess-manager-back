@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
-import { Tournament } from "./Tournament";
-import { User } from "./User";
+import type { Tournament } from "./Tournament";
+import type { User } from "./User";
 
 @Entity("matches")
 export class Match {
@@ -27,15 +27,15 @@ export class Match {
   round!: number;
 
   // Relaciones
-  @ManyToOne(() => Tournament, tournament => tournament.matches)
+  @ManyToOne(() => require("./Tournament").Tournament, (tournament: Tournament) => tournament.matches)
   @JoinColumn({ name: "tournamentId" })
   tournament!: Tournament;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => require("./User").User)
   @JoinColumn({ name: "whitePlayerId" })
   whitePlayer!: User;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => require("./User").User)
   @JoinColumn({ name: "blackPlayerId" })
   blackPlayer!: User;
 }
