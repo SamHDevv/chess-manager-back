@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { AppDataSource } from "./database/data-source";
 import userRoutes from "./routes/userRoutes";
+import tournamentRoutes from "./routes/tournamentRoutes";
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ app.use(express.json());
 
 // Rutas de la API
 app.use("/api/users", userRoutes);
+app.use("/api/tournaments", tournamentRoutes);
 
 // Ruta de prueba
 app.get("/api/health", (req, res) => {

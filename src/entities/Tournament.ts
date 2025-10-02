@@ -10,14 +10,23 @@ export class Tournament {
   @Column()
   name!: string;
 
-  @Column({ type: "date" })
+  @Column({ type: "datetime" })
   startDate!: Date;
 
-  @Column({ type: "date" })
+  @Column({ type: "datetime" })
   endDate!: Date;
 
   @Column()
   location!: string;
+
+  @Column({ nullable: true })
+  description?: string;
+
+  @Column({ nullable: true })
+  maxParticipants?: number;
+
+  @Column({ type: "datetime", nullable: true })
+  registrationDeadline?: Date;
 
   @Column({ 
     type: "enum", 
