@@ -24,24 +24,24 @@ export class UserService {
   }): Promise<User> {
     // Validaciones de negocio
     if (!userData.name || !userData.email || !userData.password) {
-      throw new Error("Name, email and password are required");
+      throw new Error("El nombre, email y contraseña son obligatorios");
     }
 
     // Verificar si el email ya existe
     const existingUser = await this.userRepository.findByEmail(userData.email);
     if (existingUser) {
-      throw new Error("Email already exists");
+      throw new Error("El email ya está en uso");
     }
 
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
-      throw new Error("Invalid email format");
+      throw new Error("Formato de email inválido");
     }
 
     // Validar contraseña
     if (userData.password.length < 6) {
-      throw new Error("Password must be at least 6 characters long");
+      throw new Error("La contraseña debe tener al menos 6 caracteres");
     }
 
     // TODO: Hash password before saving
@@ -56,14 +56,14 @@ export class UserService {
   async updateUser(id: number, userData: Partial<User>): Promise<User | null> {
     const existingUser = await this.userRepository.findById(id);
     if (!existingUser) {
-      throw new Error("User not found");
+      throw new Error("Usuario no encontrado");
     }
 
     // Si se está actualizando el email, verificar que no exista
     if (userData.email && userData.email !== existingUser.email) {
       const emailExists = await this.userRepository.findByEmail(userData.email);
       if (emailExists) {
-        throw new Error("Email already exists");
+        throw new Error("El email ya está en uso");
       }
     }
 
@@ -73,7 +73,7 @@ export class UserService {
   async deleteUser(id: number): Promise<boolean> {
     const existingUser = await this.userRepository.findById(id);
     if (!existingUser) {
-      throw new Error("User not found");
+      throw new Error("Usuario no encontrado");
     }
 
     return await this.userRepository.delete(id);
