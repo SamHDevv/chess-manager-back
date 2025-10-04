@@ -382,6 +382,227 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Matches",
+      "item": [
+        {
+          "name": "Get All Matches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/matches",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ongoing Matches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/matches/ongoing",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "ongoing"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Match by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/matches/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Matches by Tournament ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/matches/tournament/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "tournament", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Matches by Tournament and Round",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/matches/tournament/1/round/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "tournament", "1", "round", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Matches by Player ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/matches/player/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "player", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tournament Standings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/matches/tournament/1/standings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "tournament", "1", "standings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Match",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": 1,\n  \"whitePlayerId\": 1,\n  \"blackPlayerId\": 2,\n  \"round\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/matches",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Round Pairings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/matches/tournament/1/generate-pairings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "tournament", "1", "generate-pairings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Match Result",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"result\": \"white_wins\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/matches/1/result",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "1", "result"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Start Match",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/matches/1/start",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "1", "start"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Match",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/matches/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "matches", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }

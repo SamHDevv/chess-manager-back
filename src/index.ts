@@ -5,6 +5,7 @@ import { AppDataSource } from "./database/data-source";
 import userRoutes from "./routes/userRoutes";
 import tournamentRoutes from "./routes/tournamentRoutes";
 import inscriptionRoutes from "./routes/inscriptionRoutes";
+import matchRoutes from "./routes/matchRoutes";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/tournaments", tournamentRoutes);
 app.use("/api/inscriptions", inscriptionRoutes);
+app.use("/api/matches", matchRoutes);
 
 // Ruta de prueba
 app.get("/api/health", (req, res) => {
@@ -38,6 +40,7 @@ AppDataSource.initialize()
       console.log(`👥 Users API: http://localhost:${PORT}/api/users`);
       console.log(`🏆 Tournaments API: http://localhost:${PORT}/api/tournaments`);
       console.log(`📝 Inscriptions API: http://localhost:${PORT}/api/inscriptions`);
+      console.log(`♟️  Matches API: http://localhost:${PORT}/api/matches`);
     });
   })
   .catch((error) => console.error("❌ Error al conectar a la base de datos:", error));
