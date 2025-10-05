@@ -6,6 +6,7 @@ import userRoutes from "./routes/userRoutes";
 import tournamentRoutes from "./routes/tournamentRoutes";
 import inscriptionRoutes from "./routes/inscriptionRoutes";
 import matchRoutes from "./routes/matchRoutes";
+import authRoutes from "./routes/authRoutes";
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas de la API
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/tournaments", tournamentRoutes);
 app.use("/api/inscriptions", inscriptionRoutes);
@@ -37,7 +39,8 @@ AppDataSource.initialize()
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
       console.log(`📋 API Health: http://localhost:${PORT}/api/health`);
-      console.log(`👥 Users API: http://localhost:${PORT}/api/users`);
+      console.log(`� Auth API: http://localhost:${PORT}/api/auth`);
+      console.log(`�👥 Users API: http://localhost:${PORT}/api/users`);
       console.log(`🏆 Tournaments API: http://localhost:${PORT}/api/tournaments`);
       console.log(`📝 Inscriptions API: http://localhost:${PORT}/api/inscriptions`);
       console.log(`♟️  Matches API: http://localhost:${PORT}/api/matches`);

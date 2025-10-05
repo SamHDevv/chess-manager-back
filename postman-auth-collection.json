@@ -1,0 +1,158 @@
+{
+  "info": {
+    "name": "Chess Manager - Authentication API",
+    "description": "Collection para probar los endpoints de autenticación JWT",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Auth - Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"password\": \"123456\",\n  \"role\": \"player\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Register Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Admin Test\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\",\n  \"role\": \"admin\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Get Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE",
+            "description": "Reemplazar con el token obtenido del login"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/auth/profile",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "auth", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Verify Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE",
+            "description": "Reemplazar con el token obtenido del login"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/auth/verify-token",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "auth", "verify-token"]
+        }
+      }
+    },
+    {
+      "name": "Users - Get All (Admin Required)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE",
+            "description": "Reemplazar con el token de admin"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/users",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "users"]
+        }
+      }
+    },
+    {
+      "name": "Users - Get By ID (Owner or Admin)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_JWT_TOKEN_HERE",
+            "description": "Reemplazar con el token del usuario"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/users/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "users", "1"]
+        }
+      }
+    }
+  ]
+}

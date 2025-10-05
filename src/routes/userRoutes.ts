@@ -1,14 +1,16 @@
 import { Router } from "express";
 import { UserController } from "../controllers/UserController";
+import { AuthMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 const userController = new UserController();
+const authMiddleware = new AuthMiddleware();
 
-// Rutas de usuarios
-router.get("/", userController.getAllUsers);
-router.get("/:id", userController.getUserById);
-router.post("/", userController.createUser);
-router.put("/:id", userController.updateUser);
-router.delete("/:id", userController.deleteUser);
+// Rutas de usuarios (protegidas)
+router.get("/", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.getAllUsers);
+router.get("/:id", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.getUserById);
+router.post("/", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.createUser);
+router.put("/:id", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.updateUser);
+router.delete("/:id", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.deleteUser);
 
 export default router;
