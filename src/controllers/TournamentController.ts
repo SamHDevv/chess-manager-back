@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { TournamentService } from "../services/TournamentService";
+import { RolePermissionService, UserRole } from "../utils/rolePermissions";
 
 export class TournamentController {
   private tournamentService: TournamentService;
@@ -85,7 +86,22 @@ export class TournamentController {
     try {
       const tournamentData = req.body;
       
-      const newTournament = await this.tournamentService.createTournament(tournamentData);
+      // 🎯 NUEVO: Asignar el creador del torneo desde el token JWT
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: "Usuario no autenticado"
+        });
+        return;
+      }
+
+      // Agregar el ID del creador a los datos del torneo
+      const tournamentWithCreator = {
+        ...tournamentData,
+        createdBy: req.user.userId
+      };
+      
+      const newTournament = await this.tournamentService.createTournament(tournamentWithCreator);
       
       res.status(201).json({
         success: true,
@@ -111,6 +127,42 @@ export class TournamentController {
         res.status(400).json({
           success: false,
           message: "ID de torneo inválido"
+        });
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: "Usuario no autenticado"
+        });
+        return;
+      }
+
+      // 🔐 NUEVO: Verificar permisos antes de actualizar
+      const tournament = await this.tournamentService.getTournamentById(id);
+      if (!tournament) {
+        res.status(404).json({
+          success: false,
+          message: "Torneo no encontrado"
+        });
+        return;
+      }
+
+      // Verificar si el usuario puede editar este torneo
+      // Si no hay createdBy (torneos legacy), solo admins pueden editar
+      const tournamentCreatorId = tournament.createdBy || 0;
+      const canEdit = RolePermissionService.canPerformTournamentAction(
+        req.user.role as UserRole,
+        req.user.userId,
+        tournamentCreatorId,
+        'edit'
+      );
+
+      if (!canEdit) {
+        res.status(403).json({
+          success: false,
+          message: "No tienes permisos para editar este torneo"
         });
         return;
       }
@@ -147,6 +199,42 @@ export class TournamentController {
         res.status(400).json({
           success: false,
           message: "ID de torneo inválido"
+        });
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: "Usuario no autenticado"
+        });
+        return;
+      }
+
+      // 🔐 NUEVO: Verificar permisos antes de eliminar
+      const tournament = await this.tournamentService.getTournamentById(id);
+      if (!tournament) {
+        res.status(404).json({
+          success: false,
+          message: "Torneo no encontrado"
+        });
+        return;
+      }
+
+      // Verificar si el usuario puede eliminar este torneo
+      // Si no hay createdBy (torneos legacy), solo admins pueden eliminar
+      const tournamentCreatorId = tournament.createdBy || 0;
+      const canDelete = RolePermissionService.canPerformTournamentAction(
+        req.user.role as UserRole,
+        req.user.userId,
+        tournamentCreatorId,
+        'delete'
+      );
+
+      if (!canDelete) {
+        res.status(403).json({
+          success: false,
+          message: "No tienes permisos para eliminar este torneo"
         });
         return;
       }

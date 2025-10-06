@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from "typeorm";
 import type { Match } from "./Match";
 import type { Inscription } from "./Inscription";
+import type { User } from "./User";
 
 @Entity("tournaments")
 export class Tournament {
@@ -35,7 +36,15 @@ export class Tournament {
   })
   status!: "upcoming" | "ongoing" | "finished" | "cancelled";
 
+  // Nuevo campo: quién creó el torneo (opcional para migración)
+  @Column({ nullable: true })
+  createdBy?: number;
+
   // Relaciones
+  // TODO: Agregar relación con User cuando los datos existentes estén migrados
+  // @ManyToOne(() => require("./User").User)
+  // @JoinColumn({ name: "createdBy" })
+  // creator!: User;
   @OneToMany(() => require("./Match").Match, (match: Match) => match.tournament)
   matches!: Match[];
 

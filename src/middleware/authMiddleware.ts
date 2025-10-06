@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/AuthService';
+import { RolePermissionService, Permission, UserRole } from '../utils/rolePermissions';
 
 // Extender la interfaz Request para incluir información del usuario
 declare global {
@@ -143,5 +144,65 @@ export class AuthMiddleware {
     }
 
     next();
+  };
+
+  /**
+   * Middleware para verificar un permiso específico
+   */
+  requirePermission = (permission: Permission) => {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      if (!req.user) {
+        res.status(401).json({ 
+          success: false, 
+          message: 'Autenticación requerida' 
+        });
+        return;
+      }
+
+      const hasPermission = RolePermissionService.hasPermission(
+        req.user.role as UserRole, 
+        permission
+      );
+
+      if (!hasPermission) {
+        res.status(403).json({ 
+          success: false, 
+          message: `Acceso denegado. Se requiere el permiso: ${permission}` 
+        });
+        return;
+      }
+
+      next();
+    };
+  };
+
+  /**
+   * Middleware para verificar múltiples permisos (requiere AL MENOS UNO)
+   */
+  requireAnyPermission = (permissions: Permission[]) => {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      if (!req.user) {
+        res.status(401).json({ 
+          success: false, 
+          message: 'Autenticación requerida' 
+        });
+        return;
+      }
+
+      const hasAnyPermission = RolePermissionService.hasAnyPermission(
+        req.user.role as UserRole, 
+        permissions
+      );
+
+      if (!hasAnyPermission) {
+        res.status(403).json({ 
+          success: false, 
+          message: `Acceso denegado. Se requiere al menos uno de estos permisos: ${permissions.join(', ')}` 
+        });
+        return;
+      }
+
+      next();
+    };
   };
 }
