@@ -206,3 +206,6 @@ export class AuthMiddleware {
     };
   };
 }
+
+// Crear instancia para exportar
+export const authMiddleware = new AuthMiddleware();

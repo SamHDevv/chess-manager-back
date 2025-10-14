@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { MatchController } from "../controllers/MatchController";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 const matchController = new MatchController();
@@ -25,14 +26,17 @@ router.get("/player/:playerId", matchController.getMatchesByPlayerId);
 // GET /api/matches/tournament/:tournamentId/standings - Obtener clasificación del torneo
 router.get("/tournament/:tournamentId/standings", matchController.getTournamentStandings);
 
+// GET /api/matches/tournament/:tournamentId/is-organizer - Verificar si usuario es organizador
+router.get("/tournament/:tournamentId/is-organizer", authMiddleware.authenticate, matchController.isUserTournamentOrganizer);
+
 // POST /api/matches - Crear nueva partida
-router.post("/", matchController.createMatch);
+router.post("/", authMiddleware.authenticate, matchController.createMatch);
 
 // POST /api/matches/tournament/:tournamentId/generate-pairings - Generar emparejamientos de ronda
-router.post("/tournament/:tournamentId/generate-pairings", matchController.generateRoundPairings);
+router.post("/tournament/:tournamentId/generate-pairings", authMiddleware.authenticate, matchController.generateRoundPairings);
 
 // PATCH /api/matches/:id/result - Actualizar resultado de partida
-router.patch("/:id/result", matchController.updateMatchResult);
+router.patch("/:id/result", authMiddleware.authenticate, matchController.updateMatchResult);
 
 // PATCH /api/matches/:id/start - Iniciar partida
 router.patch("/:id/start", matchController.startMatch);

@@ -295,7 +295,10 @@ export class MatchController {
         return;
       }
 
-      const updatedMatch = await this.matchService.updateMatchResult(id, result);
+      // Obtener userId del token JWT (viene del middleware de autenticación)
+      const userId = (req as any).user?.userId;
+      
+      const updatedMatch = await this.matchService.updateMatchResult(id, result, userId);
 
       res.status(200).json({
         success: true,
@@ -311,6 +314,15 @@ export class MatchController {
 
         if (businessErrors.includes(error.message)) {
           res.status(400).json({
+            success: false,
+            message: error.message
+          });
+          return;
+        }
+
+        // Error de permisos
+        if (error.message === "Solo el organizador del torneo puede actualizar los resultados") {
+          res.status(403).json({
             success: false,
             message: error.message
           });
@@ -482,6 +494,54 @@ export class MatchController {
         success: true,
         data: standings,
         message: "Clasificación del torneo obtenida correctamente"
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "Torneo no encontrado") {
+        res.status(404).json({
+          success: false,
+          message: error.message
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+        error: error instanceof Error ? error.message : "Error desconocido"
+      });
+    }
+  };
+
+  /**
+   * Verificar si el usuario actual es organizador del torneo
+   */
+  isUserTournamentOrganizer = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const tournamentId = parseInt(req.params.tournamentId);
+      const userId = (req as any).user?.userId; // Viene del middleware de autenticación
+      
+      if (isNaN(tournamentId)) {
+        res.status(400).json({
+          success: false,
+          message: "ID de torneo inválido"
+        });
+        return;
+      }
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: "Usuario no autenticado"
+        });
+        return;
+      }
+
+      const isOrganizer = await this.matchService.isUserTournamentOrganizer(userId, tournamentId);
+      
+      res.status(200).json({
+        success: true,
+        data: isOrganizer,
+        message: isOrganizer ? "Usuario es organizador del torneo" : "Usuario no es organizador del torneo"
       });
     } catch (error) {
       if (error instanceof Error && error.message === "Torneo no encontrado") {

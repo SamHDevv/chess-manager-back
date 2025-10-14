@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+import * as jwt from 'jsonwebtoken';
+import * as bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/UserRepository';
 import { User } from '../entities/User';
 
@@ -117,9 +117,9 @@ export class AuthService {
    */
   private generateToken(payload: TokenPayload): string {
     return jwt.sign(
-      payload as jwt.JwtPayload, 
-      this.jwtSecret, 
-      { expiresIn: this.jwtExpiresIn }
+      payload,
+      this.jwtSecret as jwt.Secret,
+      { expiresIn: this.jwtExpiresIn } as jwt.SignOptions
     );
   }
 

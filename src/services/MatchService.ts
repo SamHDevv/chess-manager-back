@@ -125,10 +125,18 @@ export class MatchService {
     });
   }
 
-  async updateMatchResult(id: number, result: "white_wins" | "black_wins" | "draw"): Promise<Match | null> {
+  async updateMatchResult(id: number, result: "white_wins" | "black_wins" | "draw", userId?: number): Promise<Match | null> {
     const existingMatch = await this.matchRepository.findById(id);
     if (!existingMatch) {
       throw new Error("Partida no encontrada");
+    }
+
+    // Verificar permisos de organizador si se proporciona userId
+    if (userId) {
+      const isOrganizer = await this.isUserTournamentOrganizer(userId, existingMatch.tournamentId);
+      if (!isOrganizer) {
+        throw new Error("Solo el organizador del torneo puede actualizar los resultados");
+      }
     }
 
     // Verificar que la partida no esté ya finalizada
@@ -259,5 +267,18 @@ export class MatchService {
 
     // Ordenar por puntos (descendente)
     return standings.sort((a, b) => b.points - a.points);
+  }
+
+  /**
+   * Verificar si el usuario es organizador del torneo
+   */
+  async isUserTournamentOrganizer(userId: number, tournamentId: number): Promise<boolean> {
+    const tournament = await this.tournamentRepository.findById(tournamentId);
+    
+    if (!tournament) {
+      throw new Error("Torneo no encontrado");
+    }
+
+    return tournament.createdBy === userId;
   }
 }
