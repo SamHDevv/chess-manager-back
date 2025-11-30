@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/UserService";
+import { sanitizeUser } from "../utils/serializers";
 
 export class UserController {
   private userService: UserService;
@@ -12,9 +13,14 @@ export class UserController {
   getAllUsers = async (req: Request, res: Response): Promise<void> => {
     try {
       const users = await this.userService.getAllUsers();
+      // If the requester is an admin, include email and role so the admin UI can
+      // show promote/demote and email. Authentication middleware should populate req.user.
+      const currentUser = (req as any).user;
+      const isAdmin = currentUser && currentUser.role === "admin";
+
       res.status(200).json({
         success: true,
-        data: users,
+        data: users.map(u => sanitizeUser(u, { includeEmail: !!isAdmin, includeRole: !!isAdmin })),
         message: "Users retrieved successfully"
       });
     } catch (error) {
@@ -38,7 +44,7 @@ export class UserController {
         return;
       }
 
-      const user = await this.userService.getUserById(id);
+  const user = await this.userService.getUserById(id);
       if (!user) {
         res.status(404).json({
           success: false,
@@ -47,9 +53,12 @@ export class UserController {
         return;
       }
 
+      const currentUser2 = (req as any).user;
+      const isAdmin2 = currentUser2 && currentUser2.role === "admin";
+
       res.status(200).json({
         success: true,
-        data: user,
+        data: sanitizeUser(user as any, { includeEmail: !!isAdmin2, includeRole: !!isAdmin2, includeOriginalName: !!isAdmin2 }),
         message: "User retrieved successfully"
       });
     } catch (error) {
