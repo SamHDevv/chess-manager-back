@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { MatchService } from "../services/MatchService";
+import { sanitizeMatch, sanitizeMatches } from "../utils/serializers";
 
 export class MatchController {
   private matchService: MatchService;
@@ -13,7 +14,7 @@ export class MatchController {
       const matches = await this.matchService.getAllMatches();
       res.status(200).json({
         success: true,
-        data: matches,
+        data: sanitizeMatches(matches),
         message: "Partidas obtenidas correctamente"
       });
     } catch (error) {
@@ -37,7 +38,7 @@ export class MatchController {
         return;
       }
 
-      const match = await this.matchService.getMatchById(id);
+  const match = await this.matchService.getMatchById(id);
       
       if (!match) {
         res.status(404).json({
@@ -49,7 +50,7 @@ export class MatchController {
 
       res.status(200).json({
         success: true,
-        data: match,
+        data: sanitizeMatch(match as any),
         message: "Partida obtenida correctamente"
       });
     } catch (error) {
@@ -77,7 +78,7 @@ export class MatchController {
       
       res.status(200).json({
         success: true,
-        data: matches,
+        data: sanitizeMatches(matches),
         message: "Partidas del torneo obtenidas correctamente"
       });
     } catch (error) {
@@ -114,7 +115,7 @@ export class MatchController {
       
       res.status(200).json({
         success: true,
-        data: matches,
+        data: sanitizeMatches(matches),
         message: `Partidas de la ronda ${round} obtenidas correctamente`
       });
     } catch (error) {
@@ -157,7 +158,7 @@ export class MatchController {
       
       res.status(200).json({
         success: true,
-        data: matches,
+        data: sanitizeMatches(matches),
         message: "Partidas del jugador obtenidas correctamente"
       });
     } catch (error) {
@@ -182,7 +183,7 @@ export class MatchController {
       const matches = await this.matchService.getOngoingMatches();
       res.status(200).json({
         success: true,
-        data: matches,
+        data: sanitizeMatches(matches),
         message: "Partidas en curso obtenidas correctamente"
       });
     } catch (error) {
