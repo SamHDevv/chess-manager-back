@@ -116,6 +116,35 @@ export class UserController {
     }
   };
 
+  // GET /users/:id/deletion-info
+  getUserDeletionInfo = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid user ID"
+        });
+        return;
+      }
+
+      const deletionInfo = await this.userService.getUserDeletionInfo(id);
+      
+      res.status(200).json({
+        success: true,
+        data: deletionInfo,
+        message: "Deletion info retrieved successfully"
+      });
+    } catch (error) {
+      const statusCode = error instanceof Error && error.message === "Usuario no encontrado" ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: "Error getting deletion info",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  };
+
   // DELETE /users/:id
   deleteUser = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -133,10 +162,10 @@ export class UserController {
       res.status(200).json({
         success: true,
         data: { deleted },
-        message: "User deleted successfully"
+        message: "Usuario eliminado correctamente. Las relaciones se han gestionado automáticamente."
       });
     } catch (error) {
-      const statusCode = error instanceof Error && error.message === "User not found" ? 404 : 500;
+      const statusCode = error instanceof Error && error.message === "Usuario no encontrado" ? 404 : 500;
       res.status(statusCode).json({
         success: false,
         message: "Error deleting user",

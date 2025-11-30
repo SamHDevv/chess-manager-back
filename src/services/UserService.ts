@@ -70,13 +70,58 @@ export class UserService {
     return await this.userRepository.update(id, userData);
   }
 
+  /**
+   * Obtener información sobre qué se verá afectado al eliminar el usuario
+   */
+  async getUserDeletionInfo(id: number): Promise<{
+    canDelete: boolean;
+    warnings: string[];
+    affectedItems: {
+      tournaments: number;
+      inscriptions: number;
+      matches: number;
+    }
+  }> {
+    const existingUser = await this.userRepository.findById(id);
+    if (!existingUser) {
+      throw new Error("Usuario no encontrado");
+    }
+
+    const relations = await this.userRepository.checkUserRelations(id);
+    
+    const warnings = [];
+    if (relations.hasInscriptions) {
+      warnings.push("Se eliminarán tus inscripciones a torneos activos");
+    }
+    if (relations.hasCreatedTournaments) {
+      warnings.push("Tus torneos se transferirán automáticamente a un administrador");
+    }
+    if (relations.hasMatches) {
+      warnings.push("Tu historial de partidas se conservará pero se anonimizará tu perfil");
+    }
+
+    return {
+      canDelete: true, // Siempre permitir eliminación con manejo automático
+      warnings,
+      affectedItems: {
+        tournaments: relations.hasCreatedTournaments ? 1 : 0, // Simplificado por ahora
+        inscriptions: relations.hasInscriptions ? 1 : 0,
+        matches: relations.hasMatches ? 1 : 0
+      }
+    };
+  }
+
+  /**
+   * Eliminar usuario con manejo automático de relaciones
+   */
   async deleteUser(id: number): Promise<boolean> {
     const existingUser = await this.userRepository.findById(id);
     if (!existingUser) {
       throw new Error("Usuario no encontrado");
     }
 
-    return await this.userRepository.delete(id);
+    // Eliminación inteligente con manejo automático
+    return await this.userRepository.deleteUserSafely(id);
   }
 
   async getUserByEmail(email: string): Promise<User | null> {

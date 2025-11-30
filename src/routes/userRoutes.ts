@@ -9,6 +9,7 @@ const authMiddleware = new AuthMiddleware();
 // Rutas de usuarios (protegidas)
 router.get("/", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.getAllUsers);
 router.get("/:id", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.getUserById);
+router.get("/:id/deletion-info", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.getUserDeletionInfo);
 router.post("/", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.createUser);
 router.put("/:id", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.updateUser);
 router.delete("/:id", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.deleteUser);
