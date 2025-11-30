@@ -22,6 +22,16 @@ export class User {
   })
   role!: "admin" | "player";
 
+  // Campos para soft delete y anonimización
+  @Column({ default: false })
+  isDeleted!: boolean;
+
+  @Column({ type: "datetime", nullable: true })
+  deletedAt?: Date;
+
+  @Column({ nullable: true })
+  originalName?: string; // Para auditoría interna
+
   // Relaciones
   @OneToMany(() => require("./Inscription").Inscription, (inscription: Inscription) => inscription.user)
   inscriptions!: Inscription[];

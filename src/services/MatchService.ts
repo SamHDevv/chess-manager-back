@@ -50,8 +50,8 @@ export class MatchService {
   }
 
   async getMatchesByPlayerId(playerId: number): Promise<Match[]> {
-    // Verificar que el jugador existe
-    const player = await this.userRepository.findById(playerId);
+    // Verificar que el jugador existe (incluir usuarios eliminados para mostrar historial)
+    const player = await this.userRepository.findByIdIncludingDeleted(playerId);
     if (!player) {
       throw new Error("Jugador no encontrado");
     }

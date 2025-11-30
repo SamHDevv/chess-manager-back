@@ -2,6 +2,9 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../database/data-source";
 import { User } from "../entities/User";
 
+// ID especial para usuarios eliminados (fuera del rango normal de auto-increment)
+const DELETED_USER_ID = 999999;
+
 export class UserRepository {
   private repository: Repository<User>;
 
@@ -10,14 +13,17 @@ export class UserRepository {
   }
 
   async findAll(): Promise<User[]> {
+    // Por defecto, solo usuarios activos
     return await this.repository.find({
+      where: { isDeleted: false },
       relations: ['inscriptions']
     });
   }
 
   async findById(id: number): Promise<User | null> {
+    // Por defecto, solo usuarios activos
     return await this.repository.findOne({
-      where: { id },
+      where: { id, isDeleted: false },
       relations: ['inscriptions']
     });
   }
@@ -98,20 +104,28 @@ export class UserRepository {
   }
 
   /**
-   * Eliminación segura con manejo automático de todas las relaciones
+   * Eliminación segura con soft delete híbrido (NUEVO ENFOQUE)
    */
   async deleteUserSafely(id: number): Promise<boolean> {
     return await AppDataSource.transaction(async manager => {
-      // 1. Eliminar inscripciones automáticamente
+      const userRepository = manager.getRepository(User);
+      
+      // Obtener el usuario actual
+      const user = await userRepository.findOne({ where: { id } });
+      if (!user) {
+        throw new Error("Usuario no encontrado");
+      }
+
+      // 1. Eliminar inscripciones automáticamente (siguen siendo eliminadas)
       const inscriptionRepository = manager.getRepository("Inscription");
       await inscriptionRepository.delete({ userId: id });
 
-      // 2. Transferir torneos creados a un admin (o marcarlos como huérfanos)
+      // 2. Transferir torneos creados a un admin (igual que antes)
       const tournamentRepository = manager.getRepository("Tournament");
       
       // Buscar un admin disponible
-      const adminUser = await manager.getRepository(User)
-        .findOne({ where: { role: "admin" } });
+      const adminUser = await userRepository
+        .findOne({ where: { role: "admin", isDeleted: false } });
       
       if (adminUser) {
         await tournamentRepository.update(
@@ -126,38 +140,68 @@ export class UserRepository {
         );
       }
 
-      // 3. Conservar partidas pero crear usuario anónimo si no existe
-      const matchRepository = manager.getRepository("Match");
-      
-      // Verificar si existe usuario anónimo, si no, crearlo
-      let anonymousUser = await manager.getRepository(User)
-        .findOne({ where: { email: "anonymous@sistema.com" } });
-      
-      if (!anonymousUser) {
-        anonymousUser = await manager.getRepository(User).save({
-          name: "Usuario Eliminado",
-          email: "anonymous@sistema.com",
-          password: "no-login",
-          role: "player"
-        });
-      }
-      
-      // Transferir partidas al usuario anónimo
-      await matchRepository.update(
-        { whitePlayerId: id }, 
-        { whitePlayerId: anonymousUser.id }
-      );
-      
-      await matchRepository.update(
-        { blackPlayerId: id }, 
-        { blackPlayerId: anonymousUser.id }
-      );
+      // 3. SOFT DELETE: Anonimizar usuario pero mantener el registro
+      const timestamp = Date.now();
+      await userRepository.update(id, {
+        isDeleted: true,
+        deletedAt: new Date(),
+        originalName: user.name, // Guardar para auditoría interna
+        name: "Usuario Eliminado",
+        email: `deleted_${id}_${timestamp}@sistema.internal`,
+        password: "account-disabled-no-access"
+      });
 
-      // 4. Finalmente eliminar el usuario
-      const userRepository = manager.getRepository(User);
-      const result = await userRepository.delete(id);
+      // 4. ¡NO eliminar el usuario! Solo lo marcamos como eliminado
+      // Las partidas mantienen la referencia original al ID
       
-      return result.affected! > 0;
+      return true;
     });
+  }
+
+  /**
+   * Obtener todos los usuarios incluyendo los eliminados (para matches históricos)
+   */
+  async findAllIncludingDeleted(): Promise<User[]> {
+    return await this.repository.find({
+      relations: ['inscriptions']
+    });
+  }
+
+  /**
+   * Buscar usuario por ID incluyendo eliminados (para mostrar en partidas)
+   */
+  async findByIdIncludingDeleted(id: number): Promise<User | null> {
+    return await this.repository.findOne({
+      where: { id },
+      relations: ['inscriptions']
+    });
+  }
+
+  /**
+   * Obtener usuarios activos solamente (para listas públicas)
+   */
+  async findActiveUsers(): Promise<User[]> {
+    return await this.repository.find({
+      where: { isDeleted: false },
+      relations: ['inscriptions']
+    });
+  }
+
+  /**
+   * Obtener información del usuario especial para usuarios eliminados (LEGACY)
+   */
+  static getDeletedUserInfo(): { id: number; name: string; isDeleted: boolean } {
+    return {
+      id: DELETED_USER_ID,
+      name: "Usuario Eliminado", 
+      isDeleted: true
+    };
+  }
+
+  /**
+   * Verificar si un ID corresponde a un usuario eliminado (LEGACY)
+   */
+  static isDeletedUser(userId: number): boolean {
+    return userId === DELETED_USER_ID;
   }
 }
