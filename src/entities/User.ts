@@ -22,6 +22,9 @@ export class User {
   })
   role!: "admin" | "player";
 
+  @Column({ type: "int", default: 1500 })
+  elo!: number;
+
   // Campos para soft delete y anonimización
   @Column({ default: false })
   isDeleted!: boolean;

@@ -322,7 +322,7 @@ export class MatchController {
         }
 
         // Error de permisos
-        if (error.message === "Solo el organizador del torneo puede actualizar los resultados") {
+        if (error.message === "Solo el organizador del torneo o un administrador puede actualizar los resultados") {
           res.status(403).json({
             success: false,
             message: error.message

@@ -38,6 +38,9 @@ router.post("/tournament/:tournamentId/generate-pairings", authMiddleware.authen
 // PATCH /api/matches/:id/result - Actualizar resultado de partida
 router.patch("/:id/result", authMiddleware.authenticate, matchController.updateMatchResult);
 
+// PUT /api/matches/:id/result - Actualizar resultado de partida (alias para compatibilidad con frontend)
+router.put("/:id/result", authMiddleware.authenticate, matchController.updateMatchResult);
+
 // PATCH /api/matches/:id/start - Iniciar partida
 router.patch("/:id/start", matchController.startMatch);
 

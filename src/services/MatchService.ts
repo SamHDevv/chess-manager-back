@@ -131,11 +131,11 @@ export class MatchService {
       throw new Error("Partida no encontrada");
     }
 
-    // Verificar permisos de organizador si se proporciona userId
+    // Verificar permisos de organizador o admin si se proporciona userId
     if (userId) {
-      const isOrganizer = await this.isUserTournamentOrganizer(userId, existingMatch.tournamentId);
-      if (!isOrganizer) {
-        throw new Error("Solo el organizador del torneo puede actualizar los resultados");
+      const isAuthorized = await this.isUserTournamentOrganizer(userId, existingMatch.tournamentId);
+      if (!isAuthorized) {
+        throw new Error("Solo el organizador del torneo o un administrador puede actualizar los resultados");
       }
     }
 
@@ -279,6 +279,17 @@ export class MatchService {
       throw new Error("Torneo no encontrado");
     }
 
-    return tournament.createdBy === userId;
+    // Verificar si es el organizador del torneo
+    if (tournament.createdBy === userId) {
+      return true;
+    }
+
+    // Verificar si el usuario es admin
+    const user = await this.userRepository.findById(userId);
+    if (user && user.role === 'admin') {
+      return true;
+    }
+
+    return false;
   }
 }

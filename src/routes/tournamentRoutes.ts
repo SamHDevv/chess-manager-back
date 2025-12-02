@@ -30,6 +30,11 @@ router.patch("/:id/status",
   tournamentController.updateTournamentStatus
 );
 
+router.post("/:id/generate-matches", 
+  authMiddleware.authenticate, 
+  tournamentController.generateMatches
+);
+
 router.delete("/:id", 
   authMiddleware.authenticate, 
   authMiddleware.requireAnyPermission(['delete_own_tournaments', 'delete_any_tournament']), 

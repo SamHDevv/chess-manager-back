@@ -18,6 +18,7 @@ export function sanitizeUser(user: Partial<User>, opts: SanitizeUserOptions = {}
   const base: any = {
     id: user.id,
     name: displayName,
+    elo: user.elo || 1000,
     isDeleted: !!user.isDeleted,
     deletedAt: user.deletedAt || null
   };
