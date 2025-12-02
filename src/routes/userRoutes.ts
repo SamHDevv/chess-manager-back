@@ -11,7 +11,9 @@ router.get("/players", userController.getPlayers);
 
 // Rutas de usuarios (protegidas)
 router.get("/", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.getAllUsers);
-router.get("/:id", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.getUserById);
+// Cualquier usuario autenticado puede ver perfiles públicos (nombre, ELO, stats)
+// sanitizeUser protege datos sensibles (email, password)
+router.get("/:id", authMiddleware.authenticate, userController.getUserById);
 router.get("/:id/deletion-info", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.getUserDeletionInfo);
 router.post("/", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.createUser);
 router.put("/:id", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.updateUser);

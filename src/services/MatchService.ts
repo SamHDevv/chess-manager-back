@@ -3,18 +3,22 @@ import { UserRepository } from "../repositories/UserRepository";
 import { TournamentRepository } from "../repositories/TournamentRepository";
 import { InscriptionRepository } from "../repositories/InscriptionRepository";
 import { Match } from "../entities/Match";
+import { EloCalculationService } from "./EloCalculationService";
+import { UserService } from "./UserService";
 
 export class MatchService {
   private matchRepository: MatchRepository;
   private userRepository: UserRepository;
   private tournamentRepository: TournamentRepository;
   private inscriptionRepository: InscriptionRepository;
+  private userService: UserService;
 
   constructor() {
     this.matchRepository = new MatchRepository();
     this.userRepository = new UserRepository();
     this.tournamentRepository = new TournamentRepository();
     this.inscriptionRepository = new InscriptionRepository();
+    this.userService = new UserService();
   }
 
   async getAllMatches(): Promise<Match[]> {
@@ -144,7 +148,45 @@ export class MatchService {
       throw new Error("La partida ya tiene un resultado final");
     }
 
-    return await this.matchRepository.update(id, { result });
+    // Actualizar resultado de la partida
+    const updatedMatch = await this.matchRepository.update(id, { result });
+
+    // 📊 Actualizar ELO de ambos jugadores (el resultado ya es final: white_wins, black_wins o draw)
+    try {
+      const whitePlayer = await this.userRepository.findById(existingMatch.whitePlayerId);
+      const blackPlayer = await this.userRepository.findById(existingMatch.blackPlayerId);
+      
+      if (whitePlayer && blackPlayer) {
+        // Calcular nuevos ELOs usando el sistema FIDE con K-factor dinámico
+        const eloResult = EloCalculationService.calculateNewElosWithDynamicK(
+          whitePlayer.elo,
+          blackPlayer.elo,
+          result
+        );
+        
+        // Actualizar ELO de ambos jugadores
+        await this.userService.updateUserElo(
+          whitePlayer.id, 
+          eloResult.player1NewElo, 
+          `Partida #${id} (${eloResult.player1Change >= 0 ? '+' : ''}${eloResult.player1Change})`
+        );
+        
+        await this.userService.updateUserElo(
+          blackPlayer.id, 
+          eloResult.player2NewElo, 
+          `Partida #${id} (${eloResult.player2Change >= 0 ? '+' : ''}${eloResult.player2Change})`
+        );
+
+        console.log(`✅ ELO actualizado por partida #${id}:`);
+        console.log(`   🔷 ${whitePlayer.name}: ${whitePlayer.elo} → ${eloResult.player1NewElo} (${eloResult.player1Change >= 0 ? '+' : ''}${eloResult.player1Change})`);
+        console.log(`   🔶 ${blackPlayer.name}: ${blackPlayer.elo} → ${eloResult.player2NewElo} (${eloResult.player2Change >= 0 ? '+' : ''}${eloResult.player2Change})`);
+      }
+    } catch (eloError) {
+      // Log el error pero no fallar la actualización del resultado
+      console.error(`⚠️ Error al actualizar ELO para partida #${id}:`, eloError);
+    }
+
+    return updatedMatch;
   }
 
   async startMatch(id: number): Promise<Match | null> {
@@ -260,8 +302,22 @@ export class MatchService {
       return {
         playerId,
         playerName: inscription.user?.name || 'Jugador desconocido',
+        playerElo: inscription.user?.elo || 1500,
         points,
-        gamesPlayed
+        gamesPlayed,
+        wins: matches.filter(m => 
+          (m.whitePlayerId === playerId && m.result === 'white_wins') ||
+          (m.blackPlayerId === playerId && m.result === 'black_wins')
+        ).length,
+        draws: matches.filter(m => 
+          (m.whitePlayerId === playerId || m.blackPlayerId === playerId) && 
+          m.result === 'draw'
+        ).length,
+        losses: gamesPlayed - matches.filter(m => 
+          ((m.whitePlayerId === playerId && m.result === 'white_wins') ||
+          (m.blackPlayerId === playerId && m.result === 'black_wins') ||
+          ((m.whitePlayerId === playerId || m.blackPlayerId === playerId) && m.result === 'draw'))
+        ).length
       };
     });
 

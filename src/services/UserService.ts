@@ -16,6 +16,10 @@ export class UserService {
     return await this.userRepository.findById(id);
   }
 
+  /**
+   * Crear usuario - Para registro público
+   * ELO inicial: 1500 (estándar FIDE para principiantes)
+   */
   async createUser(userData: {
     name: string;
     email: string;
@@ -49,10 +53,15 @@ export class UserService {
 
     return await this.userRepository.create({
       ...userData,
-      role: userData.role || "player"
+      role: userData.role || "player",
+      elo: 1500 // ELO inicial estándar (FIDE rating para principiantes)
     });
   }
 
+  /**
+   * Actualizar perfil de usuario
+   * NOTA: El campo ELO se ignora automáticamente por seguridad
+   */
   async updateUser(id: number, userData: Partial<User>): Promise<User | null> {
     const existingUser = await this.userRepository.findById(id);
     if (!existingUser) {
@@ -67,7 +76,37 @@ export class UserService {
       }
     }
 
-    return await this.userRepository.update(id, userData);
+    // Prevenir actualización de ELO a través de updateUser
+    // El ELO solo se actualiza mediante sistema de partidas (implementación futura)
+    const { elo, ...safeUserData } = userData;
+    
+    if (elo !== undefined) {
+      console.warn(`⚠️ Intento de actualizar ELO ignorado. El ELO se actualiza automáticamente según resultados.`);
+    }
+
+    return await this.userRepository.update(id, safeUserData);
+  }
+
+  /**
+   * Actualizar ELO de un usuario
+   * ⚠️ SOLO para uso interno del sistema
+   * - Llamado automáticamente después de cada partida
+   * - Calcula nuevo ELO basado en resultado
+   */
+  async updateUserElo(id: number, newElo: number, reason?: string): Promise<User | null> {
+    const existingUser = await this.userRepository.findById(id);
+    if (!existingUser) {
+      throw new Error("Usuario no encontrado");
+    }
+
+    // Validar ELO
+    if (newElo < 0 || newElo > 4000) {
+      throw new Error("El ELO debe estar entre 0 y 4000");
+    }
+
+    console.log(`📊 ELO actualizado: ${existingUser.name} (ID: ${id}): ${existingUser.elo} → ${newElo}${reason ? ` - ${reason}` : ''}`);
+
+    return await this.userRepository.update(id, { elo: newElo });
   }
 
   /**
