@@ -35,6 +35,20 @@ router.post("/:id/generate-matches",
   tournamentController.generateMatches
 );
 
+// POST /api/tournaments/:id/start - Iniciar torneo manualmente (solo organizador/admin)
+router.post("/:id/start",
+  authMiddleware.authenticate,
+  authMiddleware.requireAnyPermission(['edit_own_tournaments', 'edit_any_tournament']),
+  tournamentController.startTournament
+);
+
+// POST /api/tournaments/:id/finish - Finalizar torneo manualmente (solo organizador/admin)
+router.post("/:id/finish",
+  authMiddleware.authenticate,
+  authMiddleware.requireAnyPermission(['edit_own_tournaments', 'edit_any_tournament']),
+  tournamentController.finishTournament
+);
+
 router.delete("/:id", 
   authMiddleware.authenticate, 
   authMiddleware.requireAnyPermission(['delete_own_tournaments', 'delete_any_tournament']), 

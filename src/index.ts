@@ -7,6 +7,7 @@ import tournamentRoutes from "./routes/tournamentRoutes";
 import inscriptionRoutes from "./routes/inscriptionRoutes";
 import matchRoutes from "./routes/matchRoutes";
 import authRoutes from "./routes/authRoutes";
+import { TournamentSchedulerService } from "./services/TournamentSchedulerService";
 
 dotenv.config();
 
@@ -35,6 +36,10 @@ const PORT = process.env.PORT || 3000;
 AppDataSource.initialize()
   .then(() => {
     console.log("📦 Conectado a la base de datos");
+
+    // Iniciar el scheduler de torneos
+    const tournamentScheduler = new TournamentSchedulerService();
+    tournamentScheduler.start();
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);

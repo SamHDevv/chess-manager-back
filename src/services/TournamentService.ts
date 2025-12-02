@@ -276,4 +276,64 @@ export class TournamentService {
     
     return opponents;
   }
+
+  /**
+   * Inicia un torneo manualmente (de "Próximo" a "En curso")
+   * Requiere que haya al menos 2 participantes inscritos
+   */
+  async startTournament(tournamentId: number): Promise<Tournament> {
+    const tournament = await this.tournamentRepository.findByIdSimple(tournamentId);
+    
+    if (!tournament) {
+      throw new Error("Torneo no encontrado");
+    }
+
+    if (tournament.status !== "upcoming") {
+      throw new Error(`No se puede iniciar un torneo con estado "${tournament.status}". Debe estar en estado "Próximo"`);
+    }
+
+    // Verificar que haya participantes inscritos
+    const inscriptions = await this.inscriptionRepository.findByTournamentId(tournamentId);
+    
+    if (inscriptions.length < 2) {
+      throw new Error("Se requieren al menos 2 participantes inscritos para iniciar el torneo");
+    }
+
+    // Cambiar estado a "En curso"
+    tournament.status = "ongoing";
+    const updatedTournament = await this.tournamentRepository.update(tournamentId, tournament);
+    
+    if (!updatedTournament) {
+      throw new Error("Error al actualizar el estado del torneo");
+    }
+
+    console.log(`🏁 Torneo iniciado manualmente: "${tournament.name}" (ID: ${tournamentId})`);
+    return updatedTournament;
+  }
+
+  /**
+   * Finaliza un torneo manualmente (de "En curso" a "Finalizado")
+   */
+  async finishTournament(tournamentId: number): Promise<Tournament> {
+    const tournament = await this.tournamentRepository.findByIdSimple(tournamentId);
+    
+    if (!tournament) {
+      throw new Error("Torneo no encontrado");
+    }
+
+    if (tournament.status !== "ongoing") {
+      throw new Error(`No se puede finalizar un torneo con estado "${tournament.status}". Debe estar "En curso"`);
+    }
+
+    // Cambiar estado a "Finalizado"
+    tournament.status = "finished";
+    const updatedTournament = await this.tournamentRepository.update(tournamentId, tournament);
+    
+    if (!updatedTournament) {
+      throw new Error("Error al actualizar el estado del torneo");
+    }
+
+    console.log(`🏆 Torneo finalizado manualmente: "${tournament.name}" (ID: ${tournamentId})`);
+    return updatedTournament;
+  }
 }

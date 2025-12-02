@@ -135,22 +135,33 @@ export class InscriptionController {
 
   createInscription = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { userId, tournamentId } = req.body;
+      const { tournamentId } = req.body;
+      // El userId se obtiene del token de autenticación, no del body
+      const userId = (req as any).user?.userId;
 
-      // Validar campos requeridos
-      if (!userId || !tournamentId) {
-        res.status(400).json({
+      // Validar autenticación
+      if (!userId) {
+        res.status(401).json({
           success: false,
-          message: "Los campos 'userId' y 'tournamentId' son obligatorios"
+          message: "Autenticación requerida"
         });
         return;
       }
 
-      // Validar tipos de datos
-      if (typeof userId !== "number" || typeof tournamentId !== "number") {
+      // Validar campo requerido
+      if (!tournamentId) {
         res.status(400).json({
           success: false,
-          message: "Los campos 'userId' y 'tournamentId' deben ser números"
+          message: "El campo 'tournamentId' es obligatorio"
+        });
+        return;
+      }
+
+      // Validar tipo de dato
+      if (typeof tournamentId !== "number") {
+        res.status(400).json({
+          success: false,
+          message: "El campo 'tournamentId' debe ser un número"
         });
         return;
       }
@@ -246,22 +257,33 @@ export class InscriptionController {
 
   cancelInscriptionByUserAndTournament = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { userId, tournamentId } = req.body;
+      const { tournamentId } = req.body;
+      // El userId se obtiene del token de autenticación, no del body
+      const userId = (req as any).user?.userId;
 
-      // Validar campos requeridos
-      if (!userId || !tournamentId) {
-        res.status(400).json({
+      // Validar autenticación
+      if (!userId) {
+        res.status(401).json({
           success: false,
-          message: "Los campos 'userId' y 'tournamentId' son obligatorios"
+          message: "Autenticación requerida"
         });
         return;
       }
 
-      // Validar tipos de datos
-      if (typeof userId !== "number" || typeof tournamentId !== "number") {
+      // Validar campo requerido
+      if (!tournamentId) {
         res.status(400).json({
           success: false,
-          message: "Los campos 'userId' y 'tournamentId' deben ser números"
+          message: "El campo 'tournamentId' es obligatorio"
+        });
+        return;
+      }
+
+      // Validar tipo de dato
+      if (typeof tournamentId !== "number") {
+        res.status(400).json({
+          success: false,
+          message: "El campo 'tournamentId' debe ser un número"
         });
         return;
       }

@@ -22,6 +22,12 @@ export class TournamentRepository {
     });
   }
 
+  async findByIdSimple(id: number): Promise<Tournament | null> {
+    return await this.repository.findOne({
+      where: { id }
+    });
+  }
+
   async findByStatus(status: "upcoming" | "ongoing" | "finished" | "cancelled"): Promise<Tournament[]> {
     return await this.repository.find({
       where: { status },

@@ -379,4 +379,91 @@ export class TournamentController {
       });
     }
   };
-}
+
+  // POST /tournaments/:id/start - Iniciar torneo manualmente
+  startTournament = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+
+      if (isNaN(tournamentId)) {
+        res.status(400).json({
+          success: false,
+          message: "ID de torneo inválido"
+        });
+        return;
+      }
+
+      const tournament = await this.tournamentService.startTournament(tournamentId);
+
+      res.status(200).json({
+        success: true,
+        data: tournament,
+        message: "Torneo iniciado exitosamente"
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        const businessErrors = [
+          "Torneo no encontrado",
+          "No se puede iniciar un torneo",
+          "Se requieren al menos 2 participantes"
+        ];
+
+        if (businessErrors.some(msg => error.message.includes(msg))) {
+          res.status(400).json({
+            success: false,
+            message: error.message
+          });
+          return;
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Error al iniciar torneo",
+        error: error instanceof Error ? error.message : "Error desconocido"
+      });
+    }
+  };
+
+  // POST /tournaments/:id/finish - Finalizar torneo manualmente
+  finishTournament = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+
+      if (isNaN(tournamentId)) {
+        res.status(400).json({
+          success: false,
+          message: "ID de torneo inválido"
+        });
+        return;
+      }
+
+      const tournament = await this.tournamentService.finishTournament(tournamentId);
+
+      res.status(200).json({
+        success: true,
+        data: tournament,
+        message: "Torneo finalizado exitosamente"
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        const businessErrors = [
+          "Torneo no encontrado",
+          "No se puede finalizar un torneo"
+        ];
+
+        if (businessErrors.some(msg => error.message.includes(msg))) {
+          res.status(400).json({
+            success: false,
+            message: error.message
+          });
+          return;
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Error al finalizar torneo",
+        error: error instanceof Error ? error.message : "Error desconocido"
+      });
+    }
