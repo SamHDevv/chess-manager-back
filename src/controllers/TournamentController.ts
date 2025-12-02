@@ -299,4 +299,84 @@ export class TournamentController {
       });
     }
   };
+
+  // POST /tournaments/:id/generate-matches - Generar partidas con sistema Suizo
+  generateMatches = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      
+      if (isNaN(tournamentId)) {
+        res.status(400).json({
+          success: false,
+          message: "ID de torneo inválido"
+        });
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: "Usuario no autenticado"
+        });
+        return;
+      }
+
+      const userId = req.user.userId;
+      
+      // Verificar que el usuario sea organizador o admin
+      const tournament = await this.tournamentService.getTournamentById(tournamentId);
+      
+      if (!tournament) {
+        res.status(404).json({
+          success: false,
+          message: "Torneo no encontrado"
+        });
+        return;
+      }
+      
+      const isAdmin = req.user.role === 'admin';
+      const isOrganizer = tournament.createdBy === userId;
+      
+      if (!isAdmin && !isOrganizer) {
+        res.status(403).json({
+          success: false,
+          message: "No tienes permisos para generar partidas. Solo el organizador o un administrador pueden hacerlo."
+        });
+        return;
+      }
+      
+      // Generar las partidas usando el sistema Suizo
+      const matches = await this.tournamentService.generateMatches(tournamentId);
+      
+      res.status(200).json({
+        success: true,
+        message: `Se generaron ${matches.length} partidas correctamente para la ronda ${matches[0]?.round || 1}`,
+        data: matches
+      });
+      
+    } catch (error) {
+      if (error instanceof Error) {
+        const businessErrors = [
+          "Torneo no encontrado",
+          "Solo se pueden generar partidas para torneos en progreso",
+          "Se necesitan al menos 2 participantes para generar partidas",
+          "Hay partidas pendientes en la ronda anterior"
+        ];
+
+        if (businessErrors.some(msg => error.message.includes(msg))) {
+          res.status(400).json({
+            success: false,
+            message: error.message
+          });
+          return;
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Error al generar partidas",
+        error: error instanceof Error ? error.message : "Error desconocido"
+      });
+    }
+  };
 }
