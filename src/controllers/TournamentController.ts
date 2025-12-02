@@ -467,3 +467,5 @@ export class TournamentController {
         error: error instanceof Error ? error.message : "Error desconocido"
       });
     }
+  };
+}
