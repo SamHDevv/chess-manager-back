@@ -6,6 +6,9 @@ const router = Router();
 const userController = new UserController();
 const authMiddleware = new AuthMiddleware();
 
+// Ruta pública para listar jugadores (solo jugadores activos, sin info sensible)
+router.get("/players", userController.getPlayers);
+
 // Rutas de usuarios (protegidas)
 router.get("/", authMiddleware.authenticate, authMiddleware.requireAdmin, userController.getAllUsers);
 router.get("/:id", authMiddleware.authenticate, authMiddleware.requireOwnershipOrAdmin, userController.getUserById);

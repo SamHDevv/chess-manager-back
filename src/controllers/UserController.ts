@@ -182,4 +182,29 @@ export class UserController {
       });
     }
   };
+
+  // GET /users/players (endpoint público para lista de jugadores)
+  getPlayers = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const users = await this.userService.getAllUsers();
+      
+      // Filtrar solo jugadores activos (no admins, no eliminados)
+      const players = users.filter(u => u.role === 'player' && !u.isDeleted);
+      
+      // Sanitizar datos (sin email, solo info pública)
+      const sanitizedPlayers = players.map(p => sanitizeUser(p, { includeRole: true }));
+
+      res.status(200).json({
+        success: true,
+        data: sanitizedPlayers,
+        message: "Players retrieved successfully"
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error retrieving players",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  };
 }
