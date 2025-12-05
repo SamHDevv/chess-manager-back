@@ -111,6 +111,26 @@ export class InscriptionService {
       throw new Error("Inscripción no encontrada");
     }
 
-    return await this.deleteInscription(inscription.id);
+    // Verificar que el torneo existe y obtener sus datos
+    const tournament = await this.tournamentRepository.findById(tournamentId);
+    if (!tournament) {
+      throw new Error("Torneo no encontrado");
+    }
+
+    // No permitir cancelar si el torneo ya comenzó
+    if (tournament.status !== "upcoming") {
+      throw new Error("No puedes cancelar tu inscripción en un torneo que ya ha comenzado");
+    }
+
+    // Opcional: Verificar fecha límite de cancelación (24h antes del inicio)
+    const hoursBeforeStart = 24;
+    const cancelDeadline = new Date(tournament.startDate);
+    cancelDeadline.setHours(cancelDeadline.getHours() - hoursBeforeStart);
+    
+    if (new Date() > cancelDeadline) {
+      throw new Error(`No puedes cancelar tu inscripción menos de ${hoursBeforeStart} horas antes del inicio del torneo`);
+    }
+
+    return await this.inscriptionRepository.delete(inscription.id);
   }
 }

@@ -182,6 +182,22 @@ export class TournamentController {
         });
       }
     } catch (error) {
+      // Mejorar manejo de errores de negocio
+      if (error instanceof Error) {
+        // Errores de validación de estado del torneo
+        if (error.message.includes("No se puede modificar un torneo") ||
+            error.message.includes("No se pueden modificar los siguientes campos") ||
+            error.message.includes("Solo puedes extender la fecha") ||
+            error.message.includes("No puedes cambiar el formato") ||
+            error.message.includes("No puedes reducir el máximo")) {
+          res.status(400).json({
+            success: false,
+            message: error.message
+          });
+          return;
+        }
+      }
+
       res.status(400).json({
         success: false,
         message: "Error al actualizar torneo",

@@ -32,6 +32,11 @@ export class TournamentService {
     startDate: Date;
     endDate: Date;
     location: string;
+    description?: string;
+    maxParticipants?: number;
+    registrationDeadline?: Date;
+    tournamentFormat?: "swiss" | "round_robin" | "elimination";
+    totalRounds?: number;
     status?: "upcoming" | "ongoing" | "finished" | "cancelled";
   }): Promise<Tournament> {
     // Validaciones de campos obligatorios
@@ -51,7 +56,8 @@ export class TournamentService {
 
     return await this.tournamentRepository.create({
       ...tournamentData,
-      status: tournamentData.status || "upcoming"
+      status: tournamentData.status || "upcoming",
+      tournamentFormat: tournamentData.tournamentFormat || "swiss"
     });
   }
 
@@ -61,11 +67,61 @@ export class TournamentService {
       throw new Error("Torneo no encontrado");
     }
 
-    // Validaciones si se actualizan fechas
-    if (tournamentData.startDate && tournamentData.endDate) {
-      if (new Date(tournamentData.startDate) >= new Date(tournamentData.endDate)) {
-        throw new Error("La fecha de inicio debe ser anterior a la fecha de fin");
+    // RESTRICCIONES POR ESTADO DEL TORNEO
+    if (existingTournament.status === "finished" || existingTournament.status === "cancelled") {
+      throw new Error("No se puede modificar un torneo finalizado o cancelado.");
+    }
+
+    if (existingTournament.status === "ongoing") {
+      // permitir modificar descripción y extender fecha de fin
+      const allowedFields = ["description", "endDate"];
+      const attemptedFields = Object.keys(tournamentData);
+      const invalidFields = attemptedFields.filter(field => !allowedFields.includes(field));
+      
+      if (invalidFields.length > 0) {
+        throw new Error(`No se pueden modificar los siguientes campos en un torneo en curso: ${invalidFields.join(", ")}. Solo puedes editar la descripción y extender la fecha de fin.`);
       }
+
+      // Si se intenta modificar endDate, solo permitir extenderla
+      if (tournamentData.endDate) {
+        const newEndDate = new Date(tournamentData.endDate);
+        const currentEndDate = new Date(existingTournament.endDate);
+        if (newEndDate < currentEndDate) {
+          throw new Error("Solo puedes extender la fecha de fin de un torneo en curso, no acortarla.");
+        }
+      }
+    }
+
+    if (existingTournament.status === "upcoming") {
+      // Torneo próximo: verificar restricciones si hay participantes
+      const inscriptionCount = await this.inscriptionRepository.countByTournamentId(id);
+      
+      if (inscriptionCount > 0) {
+        // No permitir cambiar formato si ya hay participantes
+        if (tournamentData.tournamentFormat && tournamentData.tournamentFormat !== existingTournament.tournamentFormat) {
+          throw new Error("No puedes cambiar el formato del torneo porque ya hay participantes inscritos. Esto afectaría los emparejamientos.");
+        }
+
+        // No permitir reducir maxParticipants por debajo del número actual de inscritos
+        if (tournamentData.maxParticipants && tournamentData.maxParticipants < inscriptionCount) {
+          throw new Error(`No puedes reducir el máximo de participantes a ${tournamentData.maxParticipants} porque ya hay ${inscriptionCount} participantes inscritos.`);
+        }
+      }
+    }
+
+    // Validar fechas si se proporcionan
+    const startDate = tournamentData.startDate ? new Date(tournamentData.startDate) : new Date(existingTournament.startDate);
+    const endDate = tournamentData.endDate ? new Date(tournamentData.endDate) : new Date(existingTournament.endDate);
+    const registrationDeadline = tournamentData.registrationDeadline 
+      ? new Date(tournamentData.registrationDeadline) 
+      : (existingTournament.registrationDeadline ? new Date(existingTournament.registrationDeadline) : undefined);
+
+    if (startDate >= endDate) {
+      throw new Error("La fecha de inicio debe ser anterior a la fecha de fin");
+    }
+
+    if (registrationDeadline && registrationDeadline >= startDate) {
+      throw new Error("La fecha límite de inscripción debe ser anterior a la fecha de inicio");
     }
 
     return await this.tournamentRepository.update(id, tournamentData);
@@ -138,6 +194,26 @@ export class TournamentService {
     return await this.tournamentRepository.update(id, { status });
   }
   /**
+   * Calcula el número de rondas según el formato del torneo
+   */
+  private calculateTotalRounds(format: string, participantCount: number): number {
+    switch (format) {
+      case "swiss":
+        // Sistema Suizo: log₂(n) redondeado hacia arriba
+        return Math.ceil(Math.log2(participantCount));
+      case "round_robin":
+        // Todos contra todos: n - 1 rondas
+        return participantCount - 1;
+      case "elimination":
+        // Eliminación directa: log₂(n)
+        return Math.ceil(Math.log2(participantCount));
+      default:
+        // Por defecto usar sistema suizo
+        return Math.ceil(Math.log2(participantCount));
+    }
+  }
+
+  /**
    * Genera partidas para la siguiente ronda usando el sistema Suizo
    */
   async generateMatches(tournamentId: number): Promise<Match[]> {
@@ -158,12 +234,25 @@ export class TournamentService {
     if (inscriptions.length < 2) {
       throw new Error("Se necesitan al menos 2 participantes para generar partidas");
     }
+
+    // Calcular o actualizar totalRounds si no está definido
+    if (!tournament.totalRounds) {
+      const format = tournament.tournamentFormat || "swiss";
+      tournament.totalRounds = this.calculateTotalRounds(format, inscriptions.length);
+      await this.tournamentRepository.update(tournamentId, { totalRounds: tournament.totalRounds });
+      console.log(`📊 Total de rondas calculado para el torneo: ${tournament.totalRounds}`);
+    }
     
     // Obtener partidas existentes para determinar la ronda
     const existingMatches = await this.matchRepository.findByTournamentId(tournamentId);
     const currentRound = existingMatches.length > 0 
       ? Math.max(...existingMatches.map(m => m.round)) + 1 
       : 1;
+
+    // Verificar que no se exceda el número total de rondas
+    if (currentRound > tournament.totalRounds) {
+      throw new Error(`No se pueden generar más rondas. El torneo está configurado para ${tournament.totalRounds} ronda(s) y ya se han completado todas.`);
+    }
     
     // Verificar que no haya partidas pendientes en la ronda actual
     const pendingMatches = existingMatches.filter(

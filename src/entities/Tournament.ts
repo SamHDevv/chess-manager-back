@@ -31,6 +31,17 @@ export class Tournament {
 
   @Column({ 
     type: "enum", 
+    enum: ["swiss", "round_robin", "elimination"],
+    default: "swiss",
+    nullable: true
+  })
+  tournamentFormat?: "swiss" | "round_robin" | "elimination";
+
+  @Column({ nullable: true })
+  totalRounds?: number;
+
+  @Column({ 
+    type: "enum", 
     enum: ["upcoming", "ongoing", "finished", "cancelled"],
     default: "upcoming"
   })

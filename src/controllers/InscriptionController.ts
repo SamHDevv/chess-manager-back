@@ -306,10 +306,81 @@ export class InscriptionController {
       if (error instanceof Error) {
         const businessErrors = [
           "Inscripción no encontrada",
-          "No se puede cancelar la inscripción de un torneo que ya ha comenzado"
+          "Torneo no encontrado",
+          "No se puede cancelar la inscripción de un torneo que ya ha comenzado",
+          "No puedes cancelar tu inscripción en un torneo que ya ha comenzado"
         ];
 
-        if (businessErrors.includes(error.message)) {
+        // Detectar errores de fecha límite
+        if (error.message.includes("No puedes cancelar tu inscripción menos de")) {
+          res.status(400).json({
+            success: false,
+            message: error.message
+          });
+          return;
+        }
+
+        if (businessErrors.some(msg => error.message.includes(msg))) {
+          res.status(400).json({
+            success: false,
+            message: error.message
+          });
+          return;
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+        error: error instanceof Error ? error.message : "Error desconocido"
+      });
+    }
+  };
+
+  // Nuevo endpoint: Cancelar inscripción usando parámetros de URL
+  cancelMyInscription = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const tournamentId = parseInt(req.params.tournamentId);
+      const userId = (req as any).user?.userId;
+
+      // Validar autenticación
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: "Autenticación requerida"
+        });
+        return;
+      }
+
+      // Validar parámetro
+      if (isNaN(tournamentId)) {
+        res.status(400).json({
+          success: false,
+          message: "ID de torneo inválido"
+        });
+        return;
+      }
+
+      const cancelled = await this.inscriptionService.cancelInscriptionByUserAndTournament(userId, tournamentId);
+      
+      if (!cancelled) {
+        res.status(404).json({
+          success: false,
+          message: "No tienes ninguna inscripción activa en este torneo"
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Tu inscripción ha sido cancelada correctamente"
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        // Errores de negocio que deben mostrarse al usuario
+        if (error.message.includes("No puedes cancelar") || 
+            error.message.includes("Inscripción no encontrada") ||
+            error.message.includes("Torneo no encontrado")) {
           res.status(400).json({
             success: false,
             message: error.message
