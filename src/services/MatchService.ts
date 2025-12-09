@@ -186,6 +186,9 @@ export class MatchService {
       console.error(`⚠️ Error al actualizar ELO para partida #${id}:`, eloError);
     }
 
+    // ✅ Verificar si el torneo debe finalizarse automáticamente
+    await this.checkAndFinalizeTournament(existingMatch.tournamentId);
+
     return updatedMatch;
   }
 
@@ -323,6 +326,69 @@ export class MatchService {
 
     // Ordenar por puntos (descendente)
     return standings.sort((a, b) => b.points - a.points);
+  }
+
+  /**
+   * Verifica si todas las partidas de un torneo están completadas
+   * y finaliza automáticamente el torneo si corresponde
+   */
+  private async checkAndFinalizeTournament(tournamentId: number): Promise<void> {
+    try {
+      // Obtener el torneo
+      const tournament = await this.tournamentRepository.findById(tournamentId);
+      
+      if (!tournament) {
+        console.warn(`⚠️  Torneo ${tournamentId} no encontrado`);
+        return;
+      }
+
+      // Solo procesar torneos en estado "ongoing"
+      if (tournament.status !== 'ongoing') {
+        return;
+      }
+
+      // Obtener todas las partidas del torneo
+      const matches = await this.matchRepository.findByTournamentId(tournamentId);
+      
+      // Si no hay partidas, no hacer nada
+      if (matches.length === 0) {
+        return;
+      }
+
+      // Obtener la ronda máxima jugada
+      const maxRoundPlayed = Math.max(...matches.map(m => m.round));
+      
+      // Verificar si se han jugado todas las rondas configuradas
+      if (tournament.totalRounds && maxRoundPlayed < tournament.totalRounds) {
+        // Si no se han jugado todas las rondas, NO finalizar
+        // Solo verificar si la ronda actual está completa para logging
+        const currentRoundMatches = matches.filter(m => m.round === maxRoundPlayed);
+        const currentRoundCompleted = currentRoundMatches.every(
+          match => match.result !== 'not_started' && match.result !== 'ongoing'
+        );
+        
+        if (currentRoundCompleted) {
+          console.log(`ℹ️  Torneo "${tournament.name}" (ID: ${tournamentId}) - Ronda ${maxRoundPlayed}/${tournament.totalRounds} completada. Esperando generación de siguiente ronda.`);
+        }
+        return; // NO finalizar hasta que se jueguen todas las rondas
+      }
+
+      // Verificar si todas las partidas de la última ronda están finalizadas
+      const allMatchesCompleted = matches.every(
+        match => match.result !== 'not_started' && match.result !== 'ongoing'
+      );
+
+      if (!allMatchesCompleted) {
+        return; // Aún hay partidas pendientes en la última ronda
+      }
+
+      // Todas las rondas jugadas Y todas las partidas de la última ronda completadas
+      await this.tournamentRepository.update(tournamentId, { status: 'finished' });
+      console.log(`🏆 Torneo "${tournament.name}" (ID: ${tournamentId}) finalizado automáticamente - Todas las ${tournament.totalRounds} rondas completadas`);
+    } catch (error) {
+      console.error(`❌ Error al verificar finalización del torneo ${tournamentId}:`, error);
+      // No lanzar el error para no afectar la actualización del match
+    }
   }
 
   /**

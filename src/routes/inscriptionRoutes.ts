@@ -27,7 +27,7 @@ router.delete("/:id", authMiddleware.authenticate, authMiddleware.requireAdmin, 
 // DELETE /api/inscriptions/cancel - Cancelar inscripción por usuario y torneo (protegido - el userId se toma del token)
 router.delete("/cancel", authMiddleware.authenticate, inscriptionController.cancelInscriptionByUserAndTournament);
 
-// DELETE /api/inscriptions/tournament/:tournamentId - Cancelar MI inscripción en un torneo específico (protegido)
-router.delete("/tournament/:tournamentId", authMiddleware.authenticate, inscriptionController.cancelMyInscription);
+// DELETE /api/inscriptions/tournament/:tournamentId/cancel - Cancelar MI inscripción en un torneo específico (protegido)
+router.delete("/tournament/:tournamentId/cancel", authMiddleware.authenticate, inscriptionController.cancelMyInscription);
 
 export default router;

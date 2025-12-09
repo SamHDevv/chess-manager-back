@@ -1,4 +1,5 @@
 import { TournamentRepository } from "../repositories/TournamentRepository";
+import { MatchRepository } from "../repositories/MatchRepository";
 import { Tournament } from "../entities/Tournament";
 
 /**
@@ -7,10 +8,12 @@ import { Tournament } from "../entities/Tournament";
  */
 export class TournamentSchedulerService {
   private tournamentRepository: TournamentRepository;
+  private matchRepository: MatchRepository;
   private intervalId: NodeJS.Timeout | null = null;
 
   constructor() {
     this.tournamentRepository = new TournamentRepository();
+    this.matchRepository = new MatchRepository();
   }
 
   /**
@@ -67,11 +70,14 @@ export class TournamentSchedulerService {
         }
       }
 
-      // 2. Buscar torneos "En curso" cuya fecha de fin ya pasó
+      // 2. Buscar torneos "En curso" que deban finalizarse
+      // - Por fecha de fin alcanzada
+      // - O por todas las partidas completadas (independiente de la fecha)
       const ongoingTournaments = await this.tournamentRepository.findByStatus("ongoing");
       
       for (const tournament of ongoingTournaments) {
-        if (tournament.endDate <= now) {
+        const shouldFinish = await this.shouldFinishTournament(tournament, now);
+        if (shouldFinish) {
           await this.finishTournament(tournament);
           ongoingFinished++;
         }
@@ -88,11 +94,48 @@ export class TournamentSchedulerService {
   }
 
   /**
+   * Determina si un torneo debe finalizarse
+   * - Si la fecha de fin ya pasó Y todas las partidas están completas
+   * - O si todas las partidas están completas Y se han jugado todas las rondas
+   */
+  private async shouldFinishTournament(tournament: Tournament, now: Date): Promise<boolean> {
+    // Obtener todas las partidas del torneo
+    const matches = await this.matchRepository.findByTournamentId(tournament.id);
+    
+    // Si no hay partidas, no finalizar
+    if (matches.length === 0) {
+      return false;
+    }
+
+    // Verificar si todas las partidas están completas
+    const allMatchesCompleted = matches.every(
+      (match) => match.result && match.result !== "not_started" && match.result !== "ongoing"
+    );
+
+    if (!allMatchesCompleted) {
+      return false;
+    }
+
+    // Si el torneo tiene rondas configuradas, verificar que se hayan jugado todas
+    if (tournament.totalRounds) {
+      const maxRoundPlayed = Math.max(...matches.map(m => m.round));
+      
+      if (maxRoundPlayed < tournament.totalRounds) {
+        // Aún quedan rondas por jugar, NO finalizar
+        console.log(`ℹ️  [Scheduler] Torneo "${tournament.name}" (ID: ${tournament.id}) - Ronda ${maxRoundPlayed}/${tournament.totalRounds} completada. Esperando siguiente ronda.`);
+        return false;
+      }
+    }
+
+    // Todas las partidas completas Y todas las rondas jugadas (o sin rondas configuradas)
+    return true;
+  }
+
+  /**
    * Inicia un torneo (de "Próximo" a "En curso")
    */
   private async startTournament(tournament: Tournament): Promise<void> {
-    tournament.status = "ongoing";
-    await this.tournamentRepository.update(tournament.id, tournament);
+    await this.tournamentRepository.update(tournament.id, { status: "ongoing" });
     console.log(`🏁 [Scheduler] Torneo iniciado: "${tournament.name}" (ID: ${tournament.id})`);
   }
 
@@ -100,8 +143,7 @@ export class TournamentSchedulerService {
    * Finaliza un torneo (de "En curso" a "Finalizado")
    */
   private async finishTournament(tournament: Tournament): Promise<void> {
-    tournament.status = "finished";
-    await this.tournamentRepository.update(tournament.id, tournament);
+    await this.tournamentRepository.update(tournament.id, { status: "finished" });
     console.log(`🏆 [Scheduler] Torneo finalizado: "${tournament.name}" (ID: ${tournament.id})`);
   }
 }

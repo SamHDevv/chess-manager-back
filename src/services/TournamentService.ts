@@ -384,13 +384,12 @@ export class TournamentService {
     // Verificar que haya participantes inscritos
     const inscriptions = await this.inscriptionRepository.findByTournamentId(tournamentId);
     
-    if (inscriptions.length < 2) {
-      throw new Error("Se requieren al menos 2 participantes inscritos para iniciar el torneo");
+    if (inscriptions.length < 4) {
+      throw new Error("Se requieren al menos 4 participantes inscritos para iniciar el torneo");
     }
 
     // Cambiar estado a "En curso"
-    tournament.status = "ongoing";
-    const updatedTournament = await this.tournamentRepository.update(tournamentId, tournament);
+    const updatedTournament = await this.tournamentRepository.update(tournamentId, { status: "ongoing" });
     
     if (!updatedTournament) {
       throw new Error("Error al actualizar el estado del torneo");
@@ -415,8 +414,7 @@ export class TournamentService {
     }
 
     // Cambiar estado a "Finalizado"
-    tournament.status = "finished";
-    const updatedTournament = await this.tournamentRepository.update(tournamentId, tournament);
+    const updatedTournament = await this.tournamentRepository.update(tournamentId, { status: "finished" });
     
     if (!updatedTournament) {
       throw new Error("Error al actualizar el estado del torneo");
